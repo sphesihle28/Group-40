@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Campus Booking</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Sora', sans-serif; }
+    body { min-height: 100vh; background: #f4f6f9; display: flex; }
+    .left-panel {
+      width: 420px; flex-shrink: 0;
+      background: linear-gradient(160deg, #1a3a5c 0%, #2563a8 100%);
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 3rem 2.5rem;
+      position: relative; overflow: hidden;
+    }
+    .left-panel::before {
+      content: ''; position: absolute;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: rgba(255,255,255,.05);
+      right: -80px; top: -80px;
+    }
+    .left-panel::after {
+      content: ''; position: absolute;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: rgba(232,160,32,.15);
+      left: -60px; bottom: -60px;
+    }
+    .left-panel h1 { color: #fff; font-weight: 700; font-size: 1.6rem; margin-bottom: .5rem; }
+    .left-panel p  { color: rgba(255,255,255,.65); font-size: .9rem; line-height: 1.7; }
+    .left-panel .tag {
+      display: inline-block; background: rgba(232,160,32,.2);
+      color: #e8a020; font-size: .7rem; padding: 4px 12px;
+      border-radius: 100px; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .05em; margin-bottom: 1.5rem;
+    }
+    .right-panel {
+      flex: 1; display: flex; align-items: center;
+      justify-content: center; padding: 2rem;
+    }
+    .login-box {
+      background: #fff; border-radius: 16px;
+      padding: 2.5rem; width: 100%; max-width: 420px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.08);
+    }
+    .login-box h2 { color: #1a3a5c; font-weight: 700; font-size: 1.3rem; margin-bottom: .25rem; }
+    .login-box p.sub { color: #94a3b8; font-size: .85rem; margin-bottom: 1.75rem; }
+    .form-label { font-size: .82rem; font-weight: 600; color: #475569; margin-bottom: .3rem; }
+    .form-control {
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: .65rem .9rem; font-size: .88rem;
+      transition: border-color .2s;
+    }
+    .form-control:focus { border-color: #1a3a5c; box-shadow: 0 0 0 3px rgba(26,58,92,.08); }
+    .btn-login {
+      background: #1a3a5c; color: #fff; border: none;
+      border-radius: 8px; padding: .7rem; font-weight: 700;
+      font-size: .9rem; width: 100%;
+      transition: background .2s;
+    }
+    .btn-login:hover { background: #2563a8; color: #fff; }
+    .demo-box {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 8px; padding: .85rem 1rem;
+      margin-top: 1.25rem; font-size: .78rem;
+    }
+    .demo-box .demo-title { font-weight: 700; color: #475569; margin-bottom: .35rem; }
+    .demo-box code {
+      background: #e8f0fe; color: #1a3a5c;
+      padding: 2px 6px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+    }
+    @media (max-width: 768px) { .left-panel { display: none; } }
+  </style>
+</head>
+<body>
+
+<div class="left-panel">
+  <div class="tag">Dev Squad · Group 40 · ITC4761</div>
+  <h1>Campus Facility Booking System</h1>
+  <p>Book labs, halls, sports facilities and lecture rooms — all in one place. Manage requests, track approvals, and stay notified.</p>
+  <div class="mt-4 d-flex flex-column gap-2">
+    {% for feat in ['Role-based access control', 'Real-time conflict detection', 'Admin approval workflow', 'In-app notifications'] %}
+    <div class="d-flex align-items-center gap-2">
+      <div style="width:6px;height:6px;border-radius:50%;background:#e8a020;flex-shrink:0"></div>
+      <span style="color:rgba(255,255,255,.7);font-size:.82rem">{{ feat }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="right-panel">
+  <div class="login-box">
+    <h2>Welcome back</h2>
+    <p class="sub">Sign in with your student number or email</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} py-2 px-3 mb-3" style="font-size:.83rem;border-radius:8px">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="mb-3">
+        <label class="form-label">Student Number / Email</label>
+        <input type="text" name="identifier" class="form-control"
+               placeholder="e.g. 22012345 or name@email.com" required autofocus>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control"
+               placeholder="Your password" required>
+      </div>
+
+      <div class="mb-3 d-flex align-items-center justify-content-between">
+        <div class="form-check mb-0">
+          <input class="form-check-input" type="checkbox" name="remember" id="remember">
+          <label class="form-check-label" for="remember" style="font-size:.82rem">Remember me</label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">Sign In</button>
+    </form>
+
+    <div class="text-center mt-3" style="font-size:.82rem;color:#94a3b8">
+      Don't have an account?
+      <a href="{{ url_for('auth.register') }}" style="color:#1a3a5c;font-weight:600">Register here</a>
+    </div>
+
+    <div class="demo-box">
+      <div class="demo-title">🔑 Demo Credentials</div>
+      <div>Admin: <code>ADMIN001</code> / <code>Admin@1234</code></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
