@@ -142,6 +142,7 @@ VirtualEnvironment/
 env/
 venv/
 Venv/
+thole/
 ENV/
 env.bak/
 venv.bak/
