@@ -103,3 +103,77 @@ def toggle_user(user_id):
     status = 'activated' if user.is_active else 'deactivated'
     flash(f'User {user.full_name} {status}.', 'success')
     return redirect(url_for('admin.manage_users'))
+
+# Payment Orders for external bookings
+@admin.route('/admin/payments')
+@login_required
+@admin_required
+def payment_orders_list():
+    from models import PaymentOrder
+    status_filter = request.args.get('status', 'all')
+    query = PaymentOrder.query
+    if status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+    orders = query.order_by(PaymentOrder.created_at.desc()).all()
+
+    stats = {
+        'total':   PaymentOrder.query.count(),
+        'paid':    PaymentOrder.query.filter_by(status='paid').count(),
+        'pending': PaymentOrder.query.filter_by(status='pending').count(),
+        'other':   PaymentOrder.query.filter(
+                       PaymentOrder.status.in_(['cancelled', 'failed'])).count(),
+    }
+    return render_template('admin/payment_orders.html',
+        orders=orders, stats=stats, status_filter=status_filter)
+
+
+@admin.route('/admin/payments/<int:order_id>')
+@login_required
+@admin_required
+def payment_order_detail(order_id):
+    from models import PaymentOrder
+    order = PaymentOrder.query.get_or_404(order_id)
+    return render_template('admin/payment_order_detail.html', order=order)
+
+
+# Attendance Dashboard 
+@admin.route('/admin/attendance')
+@login_required
+@admin_required
+def attendance():
+    from models import Booking
+    from datetime import date, timedelta
+
+    view  = request.args.get('view', 'today')
+    today = date.today()
+
+    if view == 'today':
+        bookings     = Booking.query.filter(
+            Booking.booking_date == today,
+            Booking.status.in_(['approved', 'paid'])
+        ).order_by(Booking.start_time).all()
+        period_label = f"Today — {today.strftime('%d %b %Y')}"
+
+    elif view == 'week':
+        bookings = Booking.query.filter(
+            Booking.booking_date >= today,
+            Booking.booking_date <= today + timedelta(days=7),
+            Booking.status.in_(['approved', 'paid'])
+        ).order_by(Booking.booking_date, Booking.start_time).all()
+        period_label = "Next 7 Days"
+
+    else:  
+        bookings = Booking.query.filter(
+            Booking.status.in_(['approved', 'paid'])
+        ).order_by(Booking.booking_date.desc(), Booking.start_time.desc()).limit(100).all()
+        period_label = "All Time (last 100)"
+
+    attended = [b for b in bookings if b.is_attended]
+    no_show  = [b for b in bookings if not b.is_attended and b.booking_date < today]
+    upcoming = [b for b in bookings if not b.is_attended and b.booking_date >= today]
+    rate     = round(len(attended) / len(bookings) * 100, 1) if bookings else 0
+
+    return render_template('admin/attendance.html',
+        bookings=bookings, attended=attended, no_show=no_show,
+        upcoming=upcoming, attendance_rate=rate,
+        view=view, period_label=period_label, today=today)
