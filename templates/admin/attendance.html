@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Attendance{% endblock %}
+{% block page_title %}Attendance Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .att-stat { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 18px; }
+  .att-stat .val { font-size:1.8rem; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1; }
+  .att-stat .lbl { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:#94a3b8; font-weight:700; margin-top:4px; }
+  .view-tab { border-radius:8px; padding:7px 16px; font-size:.82rem; font-weight:600;
+              text-decoration:none; border:1.5px solid #e2e8f0; color:#475569; transition:all .15s; }
+  .view-tab:hover  { border-color:#1a3a5c; color:#1a3a5c; }
+  .view-tab.active { background:#1a3a5c; border-color:#1a3a5c; color:#fff; }
+  .att-row-attended { background:#f0fdf4 !important; }
+  .att-row-noshow   { background:#fff5f5 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Period tabs -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('admin.attendance', view='today') }}"
+       class="view-tab {% if view == 'today' %}active{% endif %}">
+      <i class="bi bi-calendar-day me-1"></i>Today
+    </a>
+    <a href="{{ url_for('admin.attendance', view='week') }}"
+       class="view-tab {% if view == 'week' %}active{% endif %}">
+      <i class="bi bi-calendar-week me-1"></i>Next 7 Days
+    </a>
+    <a href="{{ url_for('admin.attendance', view='history') }}"
+       class="view-tab {% if view == 'history' %}active{% endif %}">
+      <i class="bi bi-clock-history me-1"></i>History
+    </a>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('checkin.scan_page') }}"
+       class="btn btn-accent btn-sm" style="border-radius:8px">
+      <i class="bi bi-qr-code-scan me-1"></i>Open Scanner
+    </a>
+    <span class="small text-muted align-self-center">{{ period_label }}</span>
+  </div>
+</div>
+
+<!-- KPI cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="att-stat">
+      <div class="val" style="color:#1a3a5c">{{ bookings|length }}</div>
+      <div class="lbl">Total Sessions</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="att-stat">
+      <div class="val" style="color:#22c55e">{{ attended|length }}</div>
+      <div class="lbl">Attended ✅</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="att-stat">
+      <div class="val" style="color:#ef4444">{{ no_show|length }}</div>
+      <div class="lbl">No-show ❌</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="att-stat">
+      <div class="val" style="color:#e8a020">{{ attendance_rate }}%</div>
+      <div class="lbl">Attendance Rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress bar -->
+{% if bookings %}
+<div class="card mb-4 p-3">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="small fw-600" style="color:#1a3a5c">Overall Attendance Rate</span>
+    <span class="small fw-700" style="font-family:'JetBrains Mono',monospace;color:#e8a020">
+      {{ attendance_rate }}%
+    </span>
+  </div>
+  <div style="height:10px;background:#f1f5f9;border-radius:100px;overflow:hidden">
+    <div style="height:100%;width:{{ attendance_rate }}%;
+                background:linear-gradient(90deg,#22c55e,#e8a020);
+                border-radius:100px;transition:width .5s"></div>
+  </div>
+  <div class="d-flex justify-content-between mt-1" style="font-size:.68rem;color:#94a3b8">
+    <span>{{ attended|length }} attended</span>
+    <span>{{ no_show|length }} no-show</span>
+    <span>{{ upcoming|length }} upcoming</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sessions table -->
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-person-check me-2"></i>Sessions — {{ period_label }}
+  </div>
+  <div class="card-body p-0">
+    {% if bookings %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="small ps-3">Booking</th>
+            <th class="small">Member</th>
+            <th class="small">Facility</th>
+            <th class="small">Date</th>
+            <th class="small">Time</th>
+            <th class="small">Ppl</th>
+            <th class="small">Booking Type</th>
+            <th class="small pe-3">Attendance</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for b in bookings %}
+        <tr class="{% if b.is_attended %}att-row-attended{% elif b.booking_date < today %}att-row-noshow{% endif %}">
+          <td class="ps-3">
+            <div class="small fw-600" style="color:#1a3a5c">{{ b.title }}</div>
+            <div style="font-size:.65rem;color:#94a3b8">#{{ b.id }}</div>
+          </td>
+          <td>
+            <div class="small fw-600">{{ b.user.full_name }}</div>
+            <div style="font-size:.65rem;color:#94a3b8;font-family:'JetBrains Mono',monospace">
+              {{ b.user.student_number or b.user.email[:22] }}
+              {% if b.user.is_external() %}
+              <span style="background:#fef3c7;color:#92400e;font-size:.58rem;
+                           padding:1px 5px;border-radius:3px;font-weight:700">EXT</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="small">{{ b.facility.name }}</div>
+            {% if b.facility.campus %}
+            <div style="font-size:.65rem;color:#94a3b8">{{ b.facility.campus }}</div>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ b.booking_date.strftime('%d %b %Y') }}</td>
+          <td class="small" style="font-family:'JetBrains Mono',monospace;white-space:nowrap">
+            {{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}
+          </td>
+          <td class="small text-muted">{{ b.attendees }}</td>
+          <td>
+            <span class="badge rounded-pill px-2" style="font-size:.68rem;
+              {% if b.status == 'paid' %}background:#ede9fe;color:#5b21b6
+              {% else %}background:#d1fae5;color:#065f46{% endif %}">
+              {{ '💳 Paid' if b.status == 'paid' else 'Approved' }}
+            </span>
+          </td>
+          <td class="pe-3">
+            {% if b.is_attended %}
+            <div class="d-flex align-items-center gap-1">
+              <span style="color:#22c55e;font-size:1.1rem">✅</span>
+              <div>
+                <div class="small fw-600" style="color:#065f46">
+                  {{ b.attended_at.strftime('%H:%M') }}
+                </div>
+                <div style="font-size:.65rem;color:#94a3b8">
+                  {{ b.attended_at.strftime('%d %b') }}
+                </div>
+                {% if b.attended_by %}
+                <div style="font-size:.62rem;color:#94a3b8">
+                  by {{ b.attended_by.full_name }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% elif b.booking_date < today %}
+            <span style="color:#ef4444;font-size:.78rem;font-weight:600">
+              <i class="bi bi-x-circle me-1"></i>No-show
+            </span>
+            {% else %}
+            <div class="d-flex align-items-center gap-2">
+              <span style="color:#94a3b8;font-size:.78rem">Pending</span>
+              {% if b.qr_token %}
+              <a href="{{ url_for('checkin.scan_result', token=b.qr_token) }}"
+                 class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.68rem">
+                Check In
+              </a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-calendar3 d-block mb-2" style="font-size:2rem;opacity:.25"></i>
+      <div class="small">No sessions found for this period.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
