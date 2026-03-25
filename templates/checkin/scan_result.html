@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Check-in: {{ booking.title }}{% endblock %}
+{% block page_title %}Booking Check-in{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card" style="border-top:4px solid #e8a020">
+      <div class="card-body p-4">
+
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;
+                        color:#94a3b8;font-weight:700">Booking to Check In</div>
+            <h5 class="fw-700 mb-0 mt-1" style="color:#1a3a5c">{{ booking.title }}</h5>
+          </div>
+          <span class="badge rounded-pill px-3 py-2"
+                style="font-size:.75rem;{% if booking.status == 'paid' %}background:#ede9fe;color:#5b21b6{% else %}background:#d1fae5;color:#065f46{% endif %}">
+            {{ '💳 Paid' if booking.status == 'paid' else '✅ Approved' }}
+          </span>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0">
+              <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;
+                          color:#94a3b8;font-weight:700">Facility</div>
+              <div class="fw-700 mt-1" style="color:#1a3a5c;font-size:.9rem">
+                {{ booking.facility.name }}
+              </div>
+              {% if booking.facility.campus %}
+              <div class="small text-muted">{{ booking.facility.campus }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0">
+              <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;
+                          color:#94a3b8;font-weight:700">Date &amp; Time</div>
+              <div class="fw-700 mt-1" style="color:#1a3a5c;font-size:.9rem">
+                {{ booking.booking_date.strftime('%d %b %Y') }}
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#475569">
+                {{ booking.start_time.strftime('%H:%M') }} – {{ booking.end_time.strftime('%H:%M') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <table class="table table-borderless table-sm mb-4">
+          <tr>
+            <td class="small text-muted fw-600" style="width:140px">Member</td>
+            <td class="small fw-700" style="color:#1a3a5c">{{ booking.user.full_name }}</td>
+          </tr>
+          <tr>
+            <td class="small text-muted fw-600">ID / Number</td>
+            <td class="small" style="font-family:'JetBrains Mono',monospace">
+              {{ booking.user.student_number or booking.user.email }}
+            </td>
+          </tr>
+          {% if booking.user.organisation %}
+          <tr>
+            <td class="small text-muted fw-600">Organisation</td>
+            <td class="small">{{ booking.user.organisation }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td class="small text-muted fw-600">Attendees</td>
+            <td class="small">{{ booking.attendees }}</td>
+          </tr>
+        </table>
+
+        <form method="POST" action="{{ url_for('checkin.confirm_attendance', token=booking.qr_token) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-accent w-100 py-3 fw-700"
+                  style="border-radius:10px;font-size:1rem"
+                  onclick="return confirm('Confirm attendance for {{ booking.user.full_name }}?')">
+            <i class="bi bi-check-circle-fill me-2" style="font-size:1.1rem"></i>
+            Confirm Attendance
+          </button>
+        </form>
+
+        <div class="text-center mt-3">
+          <a href="{{ url_for('checkin.scan_page') }}" class="small text-muted">
+            ← Back to scanner
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

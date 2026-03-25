@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Check-in Confirmed{% endblock %}
+{% block page_title %}Check-in Confirmed{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-5 text-center">
+    <div class="card p-4">
+      <div style="width:80px;height:80px;background:#d1fae5;border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;
+                  margin:0 auto 1rem;font-size:2.5rem">✅</div>
+      <h3 class="fw-700 mb-1" style="color:#065f46">Attendance Confirmed!</h3>
+      <p class="text-muted mb-3" style="font-size:.88rem">
+        Checked in at <strong>{{ booking.attended_at.strftime('%H:%M') }}</strong>
+        on {{ booking.attended_at.strftime('%d %b %Y') }}
+      </p>
+
+      <div class="p-3 rounded mb-3 text-start" style="background:#f0fdf4;border:1px solid #bbf7d0">
+        <div class="fw-700 small mb-1" style="color:#1a3a5c">{{ booking.title }}</div>
+        <div class="small text-muted">
+          {{ booking.facility.name }}{% if booking.facility.campus %} · {{ booking.facility.campus }}{% endif %}
+        </div>
+        <div class="small mt-1" style="font-family:'JetBrains Mono',monospace;color:#475569">
+          {{ booking.start_time.strftime('%H:%M') }} – {{ booking.end_time.strftime('%H:%M') }}
+        </div>
+        <div class="small mt-1 fw-600" style="color:#1a3a5c">
+          {{ booking.user.full_name }}
+          {% if booking.user.student_number %}
+          <span class="text-muted fw-400">({{ booking.user.student_number }})</span>
+          {% endif %}
+        </div>
+        <div class="small text-muted mt-1">Scanned by: {{ current_user.full_name }}</div>
+      </div>
+
+      <a href="{{ url_for('checkin.scan_page') }}" class="btn btn-accent" style="border-radius:8px">
+        <i class="bi bi-qr-code-scan me-2"></i>Scan Next QR
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
